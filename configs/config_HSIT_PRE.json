@@ -27,7 +27,7 @@
 
 
         "iter_size": 1,
-        "test_freq": 5
+        "test_freq": 1
     },
 
     "pavia_dataset": {

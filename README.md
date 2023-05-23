@@ -27,6 +27,12 @@ conda activate HyperTransformer
 ```
 
 # Download datasets
+## multi-spectral pansharpening dataset
+We also use multi-spectral pansharpening dataset acquired by WorldView4(WV4),QuickBird(QB),WorldView2(WV2) satalite
+The number of bands in WV4 and QB is 4, and WV2 is 8
+1) **WV4 WV2 QB** [`Download the .h5 file here`](https://pan.baidu.com/s/1ZdIHrQB93-ASi2zR5kJz0w?pwd=dffs)
+You need ot updata the path and spctral bands in configs/config_HSIT_PRE.json for crossponding datasets.
+
 
 We use three publically available HSI datasets for experiments, namely
 
@@ -34,38 +40,30 @@ We use three publically available HSI datasets for experiments, namely
 2) **Botswana dataset**[`Download the .mat file here`](https://www.dropbox.com/s/w5bie03gaeuu6t9/Botswana.mat?dl=0), and save it in "./datasets/botswana4/Botswana.mat".
 3) **Chikusei dataset** [`Download the .mat file here`](https://naotoyokoya.com/Download.html), and save it in "./datasets/chikusei/chikusei.mat".
 
-# Processing the datasets to generate LR-HSI, PAN, and Reference-HR-HSI using Wald's protocol
+## Processing the datasets to generate LR-HSI, PAN, and Reference-HR-HSI using Wald's protocol
  We use Wald's protocol to generate LR-HSI and PAN image. To generate those cubic patches,
   1) Run `process_pavia.m` in `./datasets/pavia_centre/` to generate cubic patches. 
   2) Run `process_botswana.m` in `./datasets/botswana4/` to generate cubic patches.
   3) Run `process_chikusei.m` in `./datasets/chikusei/` to generate cubic patches.
- 
-We also use multi-spectral pansharpening dataset acquired by WorldView4(WV4),QuickBird(QB),WorldView2(WV2) satalite
-The number of bands in WV4 and QB is 4, and WV2 is 8
-1) **WV4 WV2 QB** [`Download the .h5 file here`](https://pan.baidu.com/s/1ZdIHrQB93-ASi2zR5kJz0w?pwd=dffs)
+
 
 
 # Training the Backbone of HyperTrasnformer
-Use the following codes to train HyperTransformer on the three datasets.
- 1) training on Pavia Center Dataset: 
+Use the following codes to train HyperTransformer on the four datasets.
+ 1) training on WV4|QB|WV2 Dataset:
     
-    Change "train_dataset" to "pavia_dataset" in config_HSIT_PRE.json. 
-    
-    Then use following commad to train on Pavia Center dataset.
-    `python train.py --config configs/config_HSIT_PRE.json`.
-    
- 4) training on Botswana Dataset:
-     Change "train_dataset" to "botswana4_dataset" in config_HSIT_PRE.json. 
-     
-     Then use following commad to train on Pavia Center dataset. 
-     `python train.py --config configs/config_HSIT_PRE.json`.
-     
- 6) training on Chikusei Dataset: 
-     
-     Change "train_dataset" to "chikusei_dataset" in config_HSIT_PRE.json. 
-     
-     Then use following commad to train on Pavia Center dataset. 
-     `python train.py --config configs/config_HSIT_PRE.json`.
+    Change "train_dataset" to "LRHR_dataset" in config_HSIT_PRE.json.
+    Update LRHRDataset class in HSI_dataset.py for path of dataset.
+
+2) training on Pavia Center Dataset:
+    Change "train_dataset" to "pavia_dataset" in config_HSIT_PRE.json.
+3) training on Botswana Dataset:
+     Change "train_dataset" to "botswana4_dataset" in config_HSIT_PRE.json.
+4) training on Chikusei Dataset:
+      Change "train_dataset" to "chikusei_dataset" in config_HSIT_PRE.json. 
+
+Then use following commad to train on Pavia Center dataset. 
+`python train.py --config configs/config_HSIT_PRE.json`.
      
  
 # Trained models and pansharpened results on test-set
@@ -76,5 +74,10 @@ You can download trained models and final prediction outputs through the follwin
   4) WV4: [`Download here`](https://pan.baidu.com/s/1rtO6g39PWOeK7kD0cqkrIw?pwd=qf3q)
 
 
+# More details about Training and Valadition
+using tensorboard and using CMD console, `tensorboard --logdir path_of_Experiments(event.out...)`
 
-
+# More details about Testing and Visualization
+just set testing epoch=1, run
+`python train.py --config configs/config_HSIT_PRE.json --resume best_model_path.pth`.
+and then you can get testing result!

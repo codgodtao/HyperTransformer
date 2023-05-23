@@ -257,10 +257,10 @@ if __name__ == '__main__':
                 image_dict, MS_image, PAN_image, reference = data
 
                 # Generating small patches
-                # if config["trainer"]["is_small_patch_train"]:
-                #     MS_image, unfold_shape = make_patches(MS_image, patch_size=config["trainer"]["patch_size"])
-                #     PAN_image, _ = make_patches(PAN_image, patch_size=config["trainer"]["patch_size"])
-                #     reference, _ = make_patches(reference, patch_size=config["trainer"]["patch_size"])
+                if config["trainer"]["is_small_patch_train"]:
+                    MS_image, unfold_shape = make_patches(MS_image, patch_size=config["trainer"]["patch_size"])
+                    PAN_image, _ = make_patches(PAN_image, patch_size=config["trainer"]["patch_size"])
+                    reference, _ = make_patches(reference, patch_size=config["trainer"]["patch_size"])
 
                 # Inputs and references...
                 MS_image = MS_image.float().cuda()
@@ -280,9 +280,7 @@ if __name__ == '__main__':
                 outputs[outputs < 0] = 0.0
                 outputs[outputs > 1.0] = 1.0
                 outputs = torch.round(outputs * config[config["train_dataset"]]["max_value"])
-                pred_dic.update({image_dict["imgs"][0].split("/")[-1][:-4] + "_pred": torch.squeeze(outputs).permute(1,
-                                                                                                                     2,
-                                                                                                                     0).cpu().numpy()})
+                pred_dic.update({image_dict["imgs"][0] + "_pred": torch.squeeze(outputs).permute(1,2,0).cpu().numpy()})
                 reference = torch.round(reference.detach() * config[config["train_dataset"]]["max_value"])
 
                 ### Computing performance metrics ###
@@ -316,22 +314,22 @@ if __name__ == '__main__':
 
         # Images to tensorboard
         # Regenerating the final image
-        # if config["trainer"]["is_small_patch_train"]:
-        #     outputs = outputs.view(unfold_shape).permute(0, 1, 4, 2, 5, 3, 6).contiguous()
-        #     outputs = outputs.contiguous().view(config["val_batch_size"],
-        #                                         config[config["train_dataset"]]["spectral_bands"],
-        #                                         config[config["train_dataset"]]["HR_size"],
-        #                                         config[config["train_dataset"]]["HR_size"])
-        #     reference = reference.view(unfold_shape).permute(0, 1, 4, 2, 5, 3, 6).contiguous()
-        #     reference = reference.contiguous().view(config["val_batch_size"],
-        #                                             config[config["train_dataset"]]["spectral_bands"],
-        #                                             config[config["train_dataset"]]["HR_size"],
-        #                                             config[config["train_dataset"]]["HR_size"])
-        #     MS_image = MS_image.view(unfold_shape).permute(0, 1, 4, 2, 5, 3, 6).contiguous()
-        #     MS_image = MS_image.contiguous().view(config["val_batch_size"],
-        #                                           config[config["train_dataset"]]["spectral_bands"],
-        #                                           config[config["train_dataset"]]["HR_size"],
-        #                                           config[config["train_dataset"]]["HR_size"])
+        if config["trainer"]["is_small_patch_train"]:
+            outputs = outputs.view(unfold_shape).permute(0, 1, 4, 2, 5, 3, 6).contiguous()
+            outputs = outputs.contiguous().view(config["val_batch_size"],
+                                                config[config["train_dataset"]]["spectral_bands"],
+                                                config[config["train_dataset"]]["HR_size"],
+                                                config[config["train_dataset"]]["HR_size"])
+            reference = reference.view(unfold_shape).permute(0, 1, 4, 2, 5, 3, 6).contiguous()
+            reference = reference.contiguous().view(config["val_batch_size"],
+                                                    config[config["train_dataset"]]["spectral_bands"],
+                                                    config[config["train_dataset"]]["HR_size"],
+                                                    config[config["train_dataset"]]["HR_size"])
+            MS_image = MS_image.view(unfold_shape).permute(0, 1, 4, 2, 5, 3, 6).contiguous()
+            MS_image = MS_image.contiguous().view(config["val_batch_size"],
+                                                  config[config["train_dataset"]]["spectral_bands"],
+                                                  config[config["train_dataset"]]["HR_size"],
+                                                  config[config["train_dataset"]]["HR_size"])
 
         # Normalizing the images
         outputs = outputs / torch.max(reference)
@@ -368,6 +366,8 @@ if __name__ == '__main__':
     PATH = "./" + config["experim_name"] + "/" + config["train_dataset"] + "/" + "N_modules(" + str(
         config["N_modules"]) + ")"
     ensure_dir(PATH + "/")
+    if not os.path.exists(path=PATH):
+        os.makedirs(PATH)
     writer = SummaryWriter(log_dir=PATH)
     shutil.copy2(args.config, PATH)
 
@@ -379,7 +379,7 @@ if __name__ == '__main__':
         sys.stdout = original_stdout
 
         # Main loop.
-    best_psnr = 0.0
+    best_psnr = -10.0
     for epoch in range(start_epoch, total_epochs):
         print("\nTraining Epoch: %d" % epoch)
         train(epoch)
