@@ -1,18 +1,17 @@
-# HyperTransformer: A Textural and Spectral Feature Fusion Transformer for Pansharpening (CVPR'22)
+# Unoffical code for HyperTransformer: A Textural and Spectral Feature Fusion Transformer for Pansharpening (CVPR'22)
 
-[`Wele Gedara Chaminda Bandara`](https://www.wgcban.com/), and [`Vishal M. Patel`](https://engineering.jhu.edu/vpatel36/sciencex_teams/vishalpatel/)
+## What we have done for imporvment?
+1) extend the hyperspectral datasets(over 100 bands) to multispctral datasets(only have 4 bands)
+2) add Resnet50 pretrained model as backbone for spectral features extraction
+3) remove origin cross-attention block as attention block in Deformable Detr
+4) We will release datasets, checkpoints,comparision result and so on, beside, we want to make a google colab for easy implement and understand, please wait for our update!!!
 
 
-For more information, please see our 
+For more information, please see
 - **Paper**: [`CVPR-2022-Open-Access`](https://openaccess.thecvf.com/content/CVPR2022/html/Bandara_HyperTransformer_A_Textural_and_Spectral_Feature_Fusion_Transformer_for_Pansharpening_CVPR_2022_paper.html) or [`arxiv`](https://arxiv.org/abs/2203.02503).
-- **Poster**: [`view here`](https://www.dropbox.com/s/6gw64uo2j327yp1/poster.pdf?dl=0)
-- **Video Presentation**: [`view here`](https://www.dropbox.com/s/twf90mbzjmev7yl/CVPR-HyperTransformer.mp4?dl=0)
-- **Presentation Slides**: [`download here`](https://www.dropbox.com/s/odki2ikymkoh85r/Presentation.pptx?dl=0)
 
-## Summary
-<p align="center">
-  <img src="/imgs/poster.jpg" />
-</p>
+## Flow chart
+
 
 
 # Setting up a virtual conda environment
@@ -41,79 +40,41 @@ We use three publically available HSI datasets for experiments, namely
   2) Run `process_botswana.m` in `./datasets/botswana4/` to generate cubic patches.
   3) Run `process_chikusei.m` in `./datasets/chikusei/` to generate cubic patches.
  
-# Training HyperTransformer 
-We use two stage procedure to train our HyperTransformer. 
+We also use multi-spectral pansharpening dataset acquired by WorldView4(WV4),QuickBird(QB),WorldView2(WV2) satalite
+The number of bands in WV4 and QB is 4, and WV2 is 8
+1) **WV4 WV2 QB** [`Download the .h5 file here`](https://pan.baidu.com/s/1ZdIHrQB93-ASi2zR5kJz0w?pwd=dffs)
 
-We first train the backbone of HyperTrasnformer and then fine-tune the MHFA modules. This way we get better results and faster convergence instead of training whole network at once.
 
-## Training the Backbone of HyperTrasnformer
-Use the following codes to pre-train HyperTransformer on the three datasets.
- 1) Pre-training on Pavia Center Dataset: 
+# Training the Backbone of HyperTrasnformer
+Use the following codes to train HyperTransformer on the three datasets.
+ 1) training on Pavia Center Dataset: 
     
     Change "train_dataset" to "pavia_dataset" in config_HSIT_PRE.json. 
     
-    Then use following commad to pre-train on Pavia Center dataset.
+    Then use following commad to train on Pavia Center dataset.
     `python train.py --config configs/config_HSIT_PRE.json`.
     
- 4) Pre-training on Botswana Dataset:
+ 4) training on Botswana Dataset:
      Change "train_dataset" to "botswana4_dataset" in config_HSIT_PRE.json. 
      
-     Then use following commad to pre-train on Pavia Center dataset. 
+     Then use following commad to train on Pavia Center dataset. 
      `python train.py --config configs/config_HSIT_PRE.json`.
      
- 6) Pre-training on Chikusei Dataset: 
+ 6) training on Chikusei Dataset: 
      
      Change "train_dataset" to "chikusei_dataset" in config_HSIT_PRE.json. 
      
-     Then use following commad to pre-train on Pavia Center dataset. 
+     Then use following commad to train on Pavia Center dataset. 
      `python train.py --config configs/config_HSIT_PRE.json`.
      
-
-## Fine-tuning the MHFA modules in HyperTrasnformer
-Next, we fine-tune the MHFA modules in HyperTransformer starting from pre-trained backbone from the previous step.
- 1) Fine-tuning MHFA on Pavia Center Dataset: 
-
-    Change "train_dataset" to "pavia_dataset" in config_HSIT.json. 
-    
-    Then use the following commad to train HyperTransformer on Pavia Center dataset. 
-    
-    Please specify path to best model obtained from previous step using --resume.
-    `python train.py --config configs/config_HSIT.json --resume ./Experiments/HSIT_PRE/pavia_dataset/N_modules\(4\)/best_model.pth`.
-   
- 3) Fine-tuning on Botswana Dataset: 
-
-    Change "train_dataset" to "botswana4_dataset" in config_HSIT.json. 
-    
-    Then use following commad to pre-train on Pavia Center dataset. 
-    
-    `python train.py --config configs/config_HSIT.json --resume ./Experiments/HSIT_PRE/botswana4/N_modules\(4\)/best_model.pth`.
-
- 5) Fine-tuning on Chikusei Dataset: 
-
-    Change "train_dataset" to "chikusei_dataset" in config_HSIT.json.
-    
-    Then use following commad to pre-train on Pavia Center dataset. 
-    
-    `python train.py --config configs/config_HSIT.json --resume ./Experiments/HSIT_PRE/chikusei_dataset/N_modules\(4\)/best_model.pth`.
-    
+ 
 # Trained models and pansharpened results on test-set
 You can download trained models and final prediction outputs through the follwing links for each dataset.
   1) Pavia Center: [`Download here`](https://www.dropbox.com/sh/9zg0wrbq6fzx1wa/AACH3mnRlqkVFmo6BF4wcDdaa?dl=0)
   2) Botswana: [`Download here`](https://www.dropbox.com/sh/e7og46hkn3wuaxr/AACrFOpOSFF2u0hG1CzNYVRxa?dl=0)
   3) Chikusei: [`Download here`](https://www.dropbox.com/sh/l6gaf723cb6asq4/AABPBUleyZ7aFX8POh_d5jC9a?dl=0)
+  4) WV4: [`Download here`](https://pan.baidu.com/s/1rtO6g39PWOeK7kD0cqkrIw?pwd=qf3q)
 
-# Citation
-If you find our work useful, please consider citing our paper.
-```
-@InProceedings{Bandara_2022_CVPR,
-    author    = {Bandara, Wele Gedara Chaminda and Patel, Vishal M.},
-    title     = {HyperTransformer: A Textural and Spectral Feature Fusion Transformer for Pansharpening},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    month     = {June},
-    year      = {2022},
-    pages     = {1767-1777}
-}
-```
 
 
 
