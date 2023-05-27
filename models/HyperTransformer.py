@@ -976,6 +976,7 @@ class HyperTransformerPre(nn.Module):
 
         # self.SFE        = SFE(self.in_channels, self.num_res_blocks[0], self.n_feats, self.res_scale)
         num_classess = 1000
+        # 我们修改了原论文的SFE（由16个卷积层组成），转而使用ResNet50的前两个stage，需要下载预训练权重，并在前后增加adapter
         self.SFE = ResNet.ResNet50(num_classess=num_classess, in_feats=self.in_channels, n_feats=self.n_feats)
         pretraind_model_urls = {
             'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
@@ -1045,7 +1046,7 @@ class HyperTransformerPre(nn.Module):
         b_1, c_1, h_1, w_1 = Q_lv1.size(0), Q_lv1.size(1), Q_lv1.size(2), Q_lv1.size(3)
         b_2, c_2, h_2, w_2 = Q_lv2.size(0), Q_lv2.size(1), Q_lv2.size(2), Q_lv2.size(3)
         b_3, c_3, h_3, w_3 = Q_lv3.size(0), Q_lv3.size(1), Q_lv3.size(2), Q_lv3.size(3)
-        #device =torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        #我们改进了作者的transformer，使用了参考点机制加速模型收敛
         reference_point_1 = get_encoder_reference_points(torch.tensor([[h_1, w_1]]).to(Q_lv1.device), torch.ones([b_1, 1, 2]).to(Q_lv1.device),device=Q_lv1.device)
         reference_point_2 = get_encoder_reference_points(torch.tensor([[h_2, w_2]]).to(Q_lv1.device), torch.ones([b_2, 1, 2]).to(Q_lv1.device),device=Q_lv1.device)
         reference_point_3 = get_encoder_reference_points(torch.tensor([[h_3, w_3]]).to(Q_lv1.device), torch.ones([b_3, 1, 2]).to(Q_lv1.device),device=Q_lv1.device)
