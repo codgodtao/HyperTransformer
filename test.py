@@ -26,105 +26,13 @@ from utils.vgg_perceptual_loss import VGGPerceptualLoss, VGG19
 from utils.spatial_loss import Spatial_Loss
 
 
-# Training epoch.
-def train(epoch):
-    train_loss = 0.0
-    model.train()
-    optimizer.zero_grad()
-    for i, data in enumerate(train_loader, 0):
-        # Reading data.
-        _, MS_image, PAN_image, reference = data
-
-        # Making Smaller Patches for the training
-        if config["trainer"]["is_small_patch_train"]:
-            # batch,C,H,W OR N H W
-            MS_image, _ = make_patches(MS_image, patch_size=config["trainer"]["patch_size"])
-            PAN_image, _ = make_patches(PAN_image, patch_size=config["trainer"]["patch_size"])
-            reference, _ = make_patches(reference, patch_size=config["trainer"]["patch_size"])
-
-        # Taking model outputs ...
-        MS_image = Variable(MS_image.float().cuda())
-        PAN_image = Variable(PAN_image.float().cuda())
-        # {PRED,X13,X23,TP_LOSS}
-        out = model(MS_image, PAN_image)
-
-        outputs = out["pred"]
-        # import pandas as pd
-        # tmp = outputs[0].cpu()
-        # df = pd.DataFrame(tmp.view(102,-1).detach().numpy())
-        # df.to_csv("veiew.csv")
-        # print(df)
-
-        ######### Computing loss #########
-        # Normal L1 loss
-        if config[config["train_dataset"]]["Normalized_L1"]:
-            max_ref = torch.amax(reference, dim=(2, 3)).unsqueeze(2).unsqueeze(3).expand_as(reference).cuda()
-            loss = criterion(outputs / max_ref, to_variable(reference) / max_ref)
-        else:
-            loss = criterion(outputs, to_variable(reference))
-
-        # VGG Perceptual Loss
-        # print(config[config["train_dataset"]]["R"],config[config["train_dataset"]]["G"],config[config["train_dataset"]]["B"])
-        if config[config["train_dataset"]]["VGG_Loss"]:  # grbg
-            predicted_RGB = torch.cat(
-                (torch.mean(outputs[:, 0:config[config["train_dataset"]]["R"], :, :], 1).unsqueeze(1),
-                 torch.mean(
-                     outputs[:, config[config["train_dataset"]]["G"]:config[config["train_dataset"]]["B"], :, :],
-                     1).unsqueeze(1),
-                 torch.mean(outputs[:,
-                            config[config["train_dataset"]]["B"]:config[config["train_dataset"]]["spectral_bands"],
-                            :, :], 1).unsqueeze(1)), 1)
-            target_RGB = torch.cat((torch.nanmean(  # GRBG
-                to_variable(reference)[:, 0:config[config["train_dataset"]]["R"], :, :], 1).unsqueeze(1),
-                                    torch.nanmean(to_variable(reference)[:,
-                                                  config[config["train_dataset"]]["R"]:
-                                                  config[config["train_dataset"]][
-                                                      "G"], :, :], 1).unsqueeze(1),
-                                    torch.nanmean(to_variable(reference)[:,
-                                                  config[config["train_dataset"]]["G"]:
-                                                  config[config["train_dataset"]][
-                                                      "spectral_bands"], :, :], 1).unsqueeze(1)), 1)
-            VGG_loss = VGGPerceptualLoss(predicted_RGB, target_RGB, vggnet)
-            # if VGG_loss < 10:
-            # print(VGG_loss,loss)
-            loss = loss + config[config["train_dataset"]]["VGG_Loss_F"] * VGG_loss
-            # else:
-            #     print("VGG_los:", VGG_loss)
-
-        # Transfer Perceptual Loss
-        if config[config["train_dataset"]]["Transfer_Periferal_Loss"]:
-            loss = loss + config[config["train_dataset"]]["Transfer_Periferal_Loss_F"] * out["tp_loss"].sum()
-
-        # Spatial loss
-        if config[config["train_dataset"]]["Spatial_Loss"]:
-            loss = loss + config[config["train_dataset"]]["Spatial_Loss_F"] * Spatial_loss(to_variable(reference),
-                                                                                           outputs)
-
-        # Spatial loss
-        if config[config["train_dataset"]]["multi_scale_loss"]:
-            loss += config[config["train_dataset"]]["multi_scale_loss_F"] * criterion(to_variable(reference),
-                                                                                      out["x13"]) + 2 * \
-                    config[config["train_dataset"]]["multi_scale_loss_F"] * criterion(to_variable(reference),
-                                                                                      out["x23"])
-
-        torch.autograd.backward(loss)
-
-        if i % config["trainer"]["iter_size"] == 0 or i == len(train_loader) - 1:
-            optimizer.step()
-            optimizer.zero_grad()
-
-    writer.add_scalar('Loss/train', loss, epoch)
-
-
 # Testing epoch.
 def test(epoch):
-    test_loss = 0.0
     cc = 0.0
     sam = 0.0
     rmse = 0.0
     ergas = 0.0
     psnr = 0.0
-    val_outputs = {}
     model.eval()
     pred_dic = {}
     with torch.no_grad():
@@ -147,16 +55,14 @@ def test(epoch):
 
             outputs = out["pred"]
 
-            # Computing validation loss
-            loss = criterion(outputs, reference)
-            test_loss += loss.item()
-
             # Scalling
             outputs[outputs < 0] = 0.0
             outputs[outputs > 1.0] = 1.0
             outputs = torch.round(outputs * config[config["train_dataset"]]["max_value"])
             pred_dic.update({image_dict["imgs"][0] + "_pred": torch.squeeze(outputs).permute(1, 2, 0).cpu().numpy()})
+
             reference = torch.round(reference.detach() * config[config["train_dataset"]]["max_value"])
+            pred_dic.update({image_dict["imgs"][0] + "_ref": torch.squeeze(reference).permute(1, 2, 0).cpu().numpy()})
 
             ### Computing performance metrics ###
             # Cross-correlation
@@ -180,7 +86,6 @@ def test(epoch):
     psnr /= len(test_loader)
 
     # Writing test results to tensorboard
-    writer.add_scalar('Loss/test', test_loss, epoch)
     writer.add_scalar('Test_Metrics/CC', cc, epoch)
     writer.add_scalar('Test_Metrics/SAM', sam, epoch)
     writer.add_scalar('Test_Metrics/RMSE', rmse, epoch)
@@ -206,7 +111,7 @@ def test(epoch):
                                               config[config["train_dataset"]]["HR_size"],
                                               config[config["train_dataset"]]["HR_size"])
 
-    # Normalizing the images
+    # Normalizing the images [0-1]
     outputs = outputs / torch.max(reference)
     reference = reference / torch.max(reference)
     MS_image = MS_image / torch.max(reference)
@@ -228,8 +133,7 @@ def test(epoch):
     writer.add_image('Images', imgs, epoch)
 
     # Return Outputs
-    metrics = {"loss": float(test_loss),
-               "cc": float(cc),
+    metrics = {"cc": float(cc),
                "sam": float(sam),
                "rmse": float(rmse),
                "ergas": float(ergas),
@@ -283,20 +187,6 @@ if __name__ == '__main__':
         print("Single Cuda Node is avaiable")
         model.cuda()
 
-    # Setting up training and testing dataloaderes.
-    print("Training with dataset => {}".format(config["train_dataset"]))
-    train_loader = data.DataLoader(
-        __dataset__[config["train_dataset"]](
-            config,
-            is_train=True,
-            want_DHP_MS_HR=config["is_DHP_MS"],
-        ),
-        batch_size=config["train_batch_size"],
-        num_workers=config["num_workers"],
-        shuffle=True,
-        pin_memory=False,
-    )
-
     test_loader = data.DataLoader(
         __dataset__[config["train_dataset"]](
             config,
@@ -309,32 +199,6 @@ if __name__ == '__main__':
         pin_memory=False,
     )
 
-    # Initialization of hyperparameters.
-    start_epoch = 1
-    total_epochs = config["trainer"]["total_epochs"]
-
-    # Setting up optimizer.
-    if config["optimizer"]["type"] == "SGD":
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=config["optimizer"]["args"]["lr"],
-            momentum=config["optimizer"]["args"]["momentum"],
-            weight_decay=config["optimizer"]["args"]["weight_decay"]
-        )
-    elif config["optimizer"]["type"] == "ADAM":
-        optimizer = optim.Adam(
-            model.parameters(),
-            lr=config["optimizer"]["args"]["lr"],
-            weight_decay=config["optimizer"]["args"]["weight_decay"]
-        )
-    else:
-        exit("Undefined optimizer type")
-
-    # Learning rate sheduler.
-    scheduler = optim.lr_scheduler.StepLR(optimizer,
-                                          step_size=config["optimizer"]["step_size"],
-                                          gamma=config["optimizer"]["gamma"])
-
     # Resume...
     if args.resume is not None:
         print("Loading from existing FCN and copying weights to continue....")
@@ -342,28 +206,12 @@ if __name__ == '__main__':
         model.load_state_dict(checkpoint, strict=False)
     else:
         # initialize_weights(model)
+        print("please use command --resume to input the path of checkpoint for inference!")
         initialize_weights_new(model)
+        print("testing from scratch!!!")
 
-    # Setting up loss functions.
-    if config[config["train_dataset"]]["loss_type"] == "L1":
-        criterion = torch.nn.L1Loss()
-        HF_loss = torch.nn.L1Loss()
-    elif config[config["train_dataset"]]["loss_type"] == "MSE":
-        criterion = torch.nn.MSELoss()
-        HF_loss = torch.nn.MSELoss()
-    else:
-        exit("Undefined loss type")
-
-    if config[config["train_dataset"]]["VGG_Loss"]:
-        vggnet = VGG19()
-        vggnet = torch.nn.DataParallel(vggnet).cuda()
-
-    if config[config["train_dataset"]]["Spatial_Loss"]:
-        Spatial_loss = Spatial_Loss(in_channels=config[config["train_dataset"]]["spectral_bands"]).cuda()
-
-    # Setting up tensorboard and copy .json file to save directory.
     PATH = "./" + config["experim_name"] + "/" + config["train_dataset"] + "/" + "N_modules(" + str(
-        config["N_modules"]) + ")"
+        config["N_modules"]) + ")/inference"
     ensure_dir(PATH + "/")
     if not os.path.exists(path=PATH):
         os.makedirs(PATH)
@@ -376,25 +224,11 @@ if __name__ == '__main__':
         sys.stdout = f
         print(f'\n{model}\n')
         sys.stdout = original_stdout
+        image_dict, pred_dic, metrics = test(1)
+        print(metrics)
 
-        # Main loop.
-    best_psnr = -10.0
-    for epoch in range(start_epoch, total_epochs):
-        print("\nTraining Epoch: %d" % epoch)
-        train(epoch)
-        scheduler.step()
-        if epoch % config["trainer"]["test_freq"] == 0:
-            print("\nTesting Epoch: %d" % epoch)
-            image_dict, pred_dic, metrics = test(epoch)
-            print(metrics)
-            # Saving the best model
-            if metrics["psnr"] > best_psnr:
-                best_psnr = metrics["psnr"]
+        with open(PATH + "/" + "best_metrics.json", "w+") as outfile:
+            json.dump(metrics, outfile)
 
-                # Saving best performance metrics
-                torch.save(model.state_dict(), PATH + "/" + "best_model.pth")
-                with open(PATH + "/" + "best_metrics.json", "w+") as outfile:
-                    json.dump(metrics, outfile)
-
-                # Saving best prediction
-                savemat(PATH + "/" + "final_prediction.mat", pred_dic)
+        # Saving best prediction
+        savemat(PATH + "/" + "final_prediction.mat", pred_dic)

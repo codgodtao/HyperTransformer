@@ -28,30 +28,7 @@
         "test_freq": 5
     },
 
-    "pavia_dataset": {
-        "data_dir": "./datasets/pavia_centre/pavia/",
-        "spectral_bands": 102,
-        "LR_size": 40,
-        "HR_size": 160,
-        "augmentation": false,
-        "max_value": 8000,
-        "factor": 4,
-        "optimal_lambda": 0.8,
-        "loss_type": "L1",
-        "Normalized_L1": true,
-        "VGG_Loss": true,
-        "Transfer_Periferal_Loss": true,
-        "VGG_Loss_F": 0.1,
-        "Transfer_Periferal_Loss_F": 0.05,
-        "R": 10,
-        "G": 30,
-        "B": 60,
-        "Spatial_Loss": false,
-        "Spatial_Loss_F": 1.0,
-        "multi_scale_loss": true,
-        "multi_scale_loss_F": 0.2,
-        "feature_sum": false
-    },
+
     "pavia_dataset": {
         "data_dir": "./datasets/pavia_centre/pavia/",
         "spectral_bands": 102,

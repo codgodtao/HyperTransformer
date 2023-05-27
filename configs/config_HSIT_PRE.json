@@ -24,10 +24,31 @@
         "total_epochs": 10000,
         "is_small_patch_train": false,
         "patch_size": 128,
-
-
         "iter_size": 1,
         "test_freq": 1
+    },
+    "LRHR_dataset": {
+        "data_dir": "E:\\UDL\\Data\\pansharpening",
+        "spectral_bands": 4,
+        "LR_size": 16,
+        "HR_size": 64,
+        "augmentation": false,
+        "max_value": 2047,
+        "factor": 4,
+        "optimal_lambda": 0.8,
+        "loss_type": "L1",
+        "Normalized_L1": true,
+        "VGG_Loss": false,
+        "Transfer_Periferal_Loss": false,
+        "VGG_Loss_F": 0.1,
+        "Transfer_Periferal_Loss_F": 0.05,
+        "R": 2,
+        "G": 1,
+        "B": 0,
+        "Spatial_Loss": false,
+        "Spatial_Loss_F": 1.0,
+        "multi_scale_loss": false,
+        "multi_scale_loss_F": 0.2
     },
 
     "pavia_dataset": {
@@ -53,29 +74,7 @@
         "multi_scale_loss": false,
         "multi_scale_loss_F": 0.2
     },
-    "LRHR_dataset": {
-        "data_dir": "E:\\UDL\\Data\\pansharpening",
-        "spectral_bands": 4,
-        "LR_size": 16,
-        "HR_size": 64,
-        "augmentation": false,
-        "max_value": 2047,
-        "factor": 4,
-        "optimal_lambda": 0.8,
-        "loss_type": "L1",
-        "Normalized_L1": true,
-        "VGG_Loss": false,
-        "Transfer_Periferal_Loss": false,
-        "VGG_Loss_F": 0.1,
-        "Transfer_Periferal_Loss_F": 0.05,
-        "R": 2,
-        "G": 1,
-        "B": 0,
-        "Spatial_Loss": false,
-        "Spatial_Loss_F": 1.0,
-        "multi_scale_loss": false,
-        "multi_scale_loss_F": 0.2
-    },
+
 
     "botswana_dataset": {
         "data_dir": "./datasets/botswana/botswana/",
