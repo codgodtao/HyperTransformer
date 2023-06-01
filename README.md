@@ -1,5 +1,6 @@
 # Multi-spectral Pansharpening
 Pansharpening is a process of merging a highresolution panchromatic (PAN) image and a low-resolution multispectral (LRMS) image to create a single high-resolution multispectral (HRMS) image.
+if you have any problem, please contact with me! 321227312@qq.com or **wechat: blackwhitegrey1024**
 # What we have done?
 our code is based on HyperTransformer(CVPR 2022), which is used for Hyperspectral pansharpening
 - **Paper**: [`CVPR-2022-Open-Access`](https://openaccess.thecvf.com/content/CVPR2022/html/Bandara_HyperTransformer_A_Textural_and_Spectral_Feature_Fusion_Transformer_for_Pansharpening_CVPR_2022_paper.html) or [`arxiv`](https://arxiv.org/abs/2203.02503).
@@ -17,7 +18,7 @@ our code is based on HyperTransformer(CVPR 2022), which is used for Hyperspectra
 # Data Flow chart
 ![alt DataSet](imgs/dataset.png "数据集格式")
 ![alt Flowchart](imgs/flowchart.jpg "流程图")
-![alt Result](imgs/result.jpg "tensorboard的测试结果图")
+
 
 # Setting up a virtual conda environment
 Setup a virtual conda environment using the provided ``requirements.txt``.
@@ -46,6 +47,7 @@ and then you can get testing result!
 using tensorboard under your CMD console, `tensorboard --logdir your_dir_path_of_events.out.tfevents...`
 like this: you can get metrics and images(from left to right, you will get MS,MS-pred,pred,reference,MS-reference)
 
+![alt Result](imgs/result.jpg "tensorboard的测试结果图")
 # Training the Backbone of HyperTrasnformer
 Use the following codes to train HyperTransformer on the four datasets.
  1) training on WV4|QB|WV2 Dataset:
@@ -53,7 +55,7 @@ Use the following codes to train HyperTransformer on the four datasets.
     Change "train_dataset" to "LRHR_dataset" in config_HSIT_PRE.json.
     Update LRHRDataset class in HSI_dataset.py for path of dataset.
 
-    2) Then use following commad to train on Pavia Center dataset. 
+ 2) Then use following commad to train on Pavia Center dataset. 
     `python train.py --config configs/config_HSIT_PRE.json`.
 
 # Experiment Result
@@ -66,3 +68,4 @@ Use the following codes to train HyperTransformer on the four datasets.
 |  RMSE  | 0.02  | 0.06 |0.03  |
 |  ERGAS  | 0.38  | 0.48 |0.34  |
 |  PSNR  | 32.30  | 28.31 |31.40  |
+![alt Result](imgs/模型结构图.jpg "模型结构图")
