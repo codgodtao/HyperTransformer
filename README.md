@@ -15,7 +15,7 @@ our code is based on HyperTransformer(CVPR 2022), which is used for Hyperspectra
 
 
 # Data Flow chart
-![alt DataSet](imgs/dataset.jpg "数据集格式")
+![alt DataSet](imgs/dataset.png "数据集格式")
 ![alt Flowchart](imgs/flowchart.jpg "流程图")
 ![alt Result](imgs/result.jpg "tensorboard的测试结果图")
 
